@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Urban Royale - Demo</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      background: #87ceeb; /* Sky Blue */
+    }
+    #hud {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      font-family: sans-serif;
+      font-size: 16px;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 8px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div id="hud">Health: <span id="health">100</span> | Guns: <span id="guns">0</span></div>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const player = {
+      x: 100,
+      y: 100,
+      size: 30,
+      color: 'green',
+      speed: 3,
+      health: 100,
+      guns: 0
+    };
+
+    const keys = {};
+    const gunPickups = [];
+    const enemies = [];
+
+    // Spawn guns randomly
+    for (let i = 0; i < 5; i++) {
+      gunPickups.push({
+        x: Math.random() * 770,
+        y: Math.random() * 570,
+        size: 20
+      });
+    }
+
+    // Simple enemy AI
+    for (let i = 0; i < 3; i++) {
+      enemies.push({
+        x: Math.random() * 770,
+        y: Math.random() * 570,
+        size: 30,
+        color: 'red',
+        alive: true
+      });
+    }
+
+    function update() {
+      if (keys['ArrowUp']) player.y -= player.speed;
+      if (keys['ArrowDown']) player.y += player.speed;
+      if (keys['ArrowLeft']) player.x -= player.speed;
+      if (keys['ArrowRight']) player.x += player.speed;
+
+      // Pick up guns
+      gunPickups.forEach((gun, i) => {
+        if (
+          Math.abs(player.x - gun.x) < 20 &&
+          Math.abs(player.y - gun.y) < 20
+        ) {
+          player.guns++;
+          gunPickups.splice(i, 1);
+        }
+      });
+
+      // Simple combat
+      enemies.forEach((enemy) => {
+        if (
+          enemy.alive &&
+          Math.abs(player.x - enemy.x) < 30 &&
+          Math.abs(player.y - enemy.y) < 30
+        ) {
+          if (player.guns > 0) {
+            enemy.alive = false;
+          } else {
+            player.health -= 1;
+          }
+        }
+      });
+
+      // Update HUD
+      document.getElementById('health').textContent = player.health;
+      document.getElementById('guns').textContent = player.guns;
+
+      // Check for win/lose
+      const allEnemiesDead = enemies.every((e) => !e.alive);
+      if (allEnemiesDead) alert('You win!');
+      if (player.health <= 0) alert('Game Over');
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw player
+      ctx.fillStyle = player.color;
+      ctx.fillRect(player.x, player.y, player.size, player.size);
+
+      // Draw guns
+      ctx.fillStyle = 'black';
+      gunPickups.forEach((gun) => {
+        ctx.fillRect(gun.x, gun.y, gun.size, gun.size);
+      });
+
+      // Draw enemies
+      enemies.forEach((enemy) => {
+        if (enemy.alive) {
+          ctx.fillStyle = enemy.color;
+          ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
+        }
+      });
+    }
+
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    document.addEventListener('keydown', (e) => (keys[e.key] = true));
+    document.addEventListener('keyup', (e) => (keys[e.key] = false));
+
+    gameLoop();
+  </script>
+</body>
+</html>
